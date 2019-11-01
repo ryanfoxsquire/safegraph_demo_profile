@@ -224,8 +224,11 @@ def normalize_demos_to_fractions(cen_df, demos_to_analyze, verbose=False):
 # ~~~~~~~~~~~~~~ Wrangle Patterns Data Functions~~~~~~~~~~
 import json
 
-def get_home_panel(home_panel_file):
-    home_panel = pd.read_csv(home_panel_file, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
+def get_home_panel(home_panel_file=None,  drive=None):
+    if(home_panel_file):
+        home_panel = pd.read_csv(home_panel_file, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
+    elif(drive):
+        home_panel = pd_read_csv_drive(drive_ids['home_panel_summary.csv'], drive, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
     home_panel = home_panel.groupby(['census_block_group']).sum().reset_index() # CLEAN -- there are some CBGs with records split across states, erroneously. 
     return(home_panel)
 
