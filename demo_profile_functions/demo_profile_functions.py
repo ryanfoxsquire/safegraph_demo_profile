@@ -225,9 +225,9 @@ def normalize_demos_to_fractions(cen_df, demos_to_analyze, verbose=False):
 # ~~~~~~~~~~~~~~ Wrangle Patterns Data Functions~~~~~~~~~~
 import json
 
-def get_home_panel(home_panel_file=None,  drive=None):
-    if(home_panel_file):
-        home_panel = pd.read_csv(home_panel_file, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
+def get_home_panel(patterns_dir=None,  drive=None):
+    if(patterns_dir):
+        home_panel = pd.read_csv(os.path.join(patterns_dir, "home_panel_summary.csv"), dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
     elif(drive):
         home_panel = pd_read_csv_drive(drive_ids['home_panel_summary.csv'], drive, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
     home_panel = home_panel.groupby(['census_block_group']).sum().reset_index() # CLEAN -- there are some CBGs with records split across states, erroneously. 
@@ -550,7 +550,7 @@ def apply_strata_reweighting(df,
 
 # ~~~~~~~~~~~~~~ Wrapper Functions~~~~~~~~~~
 
-def get_patterns_master(patterns_dir, drive=None, brands=None, sgpids=None, verbose=False):
+def get_patterns_master(patterns_dir, drive=None, brands=None, sgpids=None):
     if((not brands) & (not sgpids)):
         print("Error: Must give either a brand_list or sgpid_whitelist in get_patterns()")
         return(None)
@@ -604,14 +604,18 @@ def master_demo_analysis(open_census_data_dir,
     visitors_df = get_patterns_master(patterns_dir=patterns_dir, 
                                drive=drive,
                                brands=brands_list, 
-                               sgpids=sgpid_whitelist,
-                               verbose=verbose)
+                               sgpids=sgpid_whitelist)
 
-    home_panel = get_home_panel(home_panel_file=os.path.join(patterns_dir, "home_panel_summary.csv"))
+    print("complete visitors_df {}".format(visitors_df.shape))
+    
+    home_panel = get_home_panel(patterns_dir=patterns_dir, drive=drive)
+    print("complete homePanel {}".format(home_panel.shape))
+
 
     census_df, cbg_field_desc_mod = get_census_master(demos_to_analyze,
                                                       open_census_data_dir,
                                                       verbose=verbose)
+    print("complete census {}".format(census_df.shape))
 
     visitors_join, final_results = combine_and_analyze(visitors_df, 
                                                        home_panel, 
