@@ -208,7 +208,7 @@ def get_raw_census_data(demos_to_analyze, open_census_data_dir, drive=None, verb
         census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
     elif(drive):
         ocd_files = ['cbg_'+prefix+'.csv' for prefix in prefixes]
-        census_df_raw = [pd_read_csv_drive(drive_ids[file],dtype = {'census_block_group': str}, drive) for file in ocd_files]
+        census_df_raw = [pd_read_csv_drive(drive_ids[file], drive, dtype = {'census_block_group': str}) for file in ocd_files]
     cen_df = reduce(lambda  left,right: pd.merge(left,right,on='census_block_group'), census_df_raw)
     return(cen_df, cbg_field_desc) 
 
