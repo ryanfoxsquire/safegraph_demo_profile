@@ -11,15 +11,9 @@ def pd_read_csv_drive(id, drive, dtype=None):
 
 # ~~~~~~~~~~~~~~ Wrangle Open Census Data Data Functions~~~~~~~~~~
 
-# Census Data Wrangling Functions
-# TODO move this into a separate file
-
 from functools import reduce
 
-
-
 # Note: OpenCensusData public GDrive folder: https://drive.google.com/drive/u/1/folders/1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
-
 drive_ids = {'cbg_b19.csv' : '1d9GscpWbrnP2xNLKKlgd6xLcFTzJydY4',
               'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
               'cbg_b02.csv' : '1Zqqf3iLDkDWPl2theLlUm_cAbvznj-Kx',
@@ -43,7 +37,7 @@ def get_cbg_field_desc(ocd_dir=None, drive=None):
     if(ocd_dir):
         df = pd.read_csv(os.path.join(ocd_dir,"metadata","cbg_field_descriptions.csv"))
     elif(drive):
-        df = pd_read_csv_drive(drive_ids['cbg_field_descriptions.csv'])
+        df = pd_read_csv_drive(drive_ids['cbg_field_descriptions.csv'], drive)
     return(df)
 
 def get_age_by_sex_groups():
@@ -213,10 +207,8 @@ def get_raw_census_data(demos_to_analyze, open_census_data_dir, drive=None, verb
         ocd_files = [os.path.join(open_census_data_dir, 'data',filepath) for filepath in os.listdir(open_census_data_dir + 'data/') if filepath[4:7] in prefixes]
         census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
     elif(drive):
-        prefixes = get_census_prefix(demos_to_analyze, cbg_field_desc) + ['b01'] # 'b01' we need for total_population
         ocd_files = ['cbg_'+prefix+'.csv' for prefix in prefixes]
-        census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
-        census_df_raw = [pd_read_csv_drive(drive_ids[file],dtype = {'census_block_group': str}) for file in ocd_files]
+        census_df_raw = [pd_read_csv_drive(drive_ids[file],dtype = {'census_block_group': str}, drive) for file in ocd_files]
     cen_df = reduce(lambda  left,right: pd.merge(left,right,on='census_block_group'), census_df_raw)
     return(cen_df, cbg_field_desc) 
 
