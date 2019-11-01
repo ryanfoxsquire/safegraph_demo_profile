@@ -201,7 +201,7 @@ def get_raw_census_data(demos_to_analyze, open_census_data_dir, drive=None, verb
     #    'Aggregate Household Income In The Past 12 Months (In 2016 Inflation-Adjusted Dollars)'
     
     cbg_field_desc = get_cbg_field_desc(ocd_dir=open_census_data_dir, drive=drive)
-    prefixes = get_census_prefix(demos_to_analyze, cbg_field_desc) + ['b01'] # 'b01' we need for total_population
+    prefixes = set(get_census_prefix(demos_to_analyze, cbg_field_desc) + ['b01']) # 'b01' we need for total_population
 
     if(verbose): print("Pulling census data from {0} for:\n{1}".format((open_census_data_dir or drive), '\n'.join(demos_to_analyze)))
     if(open_census_data_dir):
