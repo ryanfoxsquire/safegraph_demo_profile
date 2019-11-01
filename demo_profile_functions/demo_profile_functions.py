@@ -15,12 +15,13 @@ from functools import reduce
 
 # Note: OpenCensusData public GDrive folder: https://drive.google.com/drive/u/1/folders/1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
 drive_ids = {'cbg_b19.csv' : '1d9GscpWbrnP2xNLKKlgd6xLcFTzJydY4',
-              'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
+             'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
               'cbg_b02.csv' : '1Zqqf3iLDkDWPl2theLlUm_cAbvznj-Kx',
               'cbg_b15.csv' : '1xeSZShcX3egZFsalGOFD6Ze2jTof6ri-',
               'cbg_field_descriptions.csv' : '1a7_7WxY6eaUIObkVwfknl9C7nPltYxPd',
               'cbg_fips_codes.csv' : '1dB_HeAw11TmsZ8MATMedC9j2csTRAiVm',
-             'home_panel_summary.csv': '1aiwhO6Pw1ZfUOoqUf6mS70s9tJgsAVp5'
+             'home_panel_summary.csv': '1aiwhO6Pw1ZfUOoqUf6mS70s9tJgsAVp5',
+             'core_poi-patterns.csv' : '1vOiASCoWVIppoYK8DiyLShhH7xbZhfxA'
 }
 
 
@@ -232,9 +233,13 @@ def get_home_panel(home_panel_file=None,  drive=None):
     home_panel = home_panel.groupby(['census_block_group']).sum().reset_index() # CLEAN -- there are some CBGs with records split across states, erroneously. 
     return(home_panel)
 
-def read_patterns_data(patterns_path):
-    all_patterns_files = [os.path.join(patterns_path,filepath) for filepath in os.listdir(patterns_path) if 'patterns' in filepath.lower()]
-    patterns_raw = pd.concat((pd.read_csv(f) for f in all_patterns_files))
+def read_patterns_data(patterns_path, drive=None):
+    if(patterns_path):
+        all_patterns_files = [os.path.join(patterns_path,filepath) for filepath in os.listdir(patterns_path) if 'patterns' in filepath.lower()]
+        patterns_raw = pd.concat((pd.read_csv(f) for f in all_patterns_files))
+    elif(drive):
+        all_patterns_files = [key for key in drive_ids.keys() if 'patterns' in key]
+        patterns_raw = pd.concat((pd_read_csv_drive(drive_ids[f], drive) for f in all_patterns_files))
     return(patterns_raw)
 
 def filter_patterns_dat(patt_df, brands_whitelist, sgpid_whitelist, verbose=False):
@@ -545,11 +550,11 @@ def apply_strata_reweighting(df,
 
 # ~~~~~~~~~~~~~~ Wrapper Functions~~~~~~~~~~
 
-def get_patterns_master(patterns_dir, brands=None, sgpids=None, verbose=False):
+def get_patterns_master(patterns_dir, drive=None, brands=None, sgpids=None, verbose=False):
     if((not brands) & (not sgpids)):
         print("Error: Must give either a brand_list or sgpid_whitelist in get_patterns()")
         return(None)
-    patterns_raw = read_patterns_data(patterns_dir)
+    patterns_raw = read_patterns_data(patterns_dir, drive=drive)
     patterns_filtered = filter_patterns_dat(patterns_raw, brands, sgpids, verbose=verbose)
     visitors_df = extract_visitor_home_cbgs(patterns_filtered, verbose=verbose) #   this is a slow step
     return(visitors_df)
@@ -589,12 +594,14 @@ def combine_and_analyze(visitors_df,
 
 def master_demo_analysis(open_census_data_dir,
                          patterns_dir, 
+                         drive,
                          demos_to_analyze, 
                          brands_list, 
                          sgpid_whitelist, 
                          verbose=False):
     
     visitors_df = get_patterns_master(patterns_dir=patterns_dir, 
+                               drive=None,
                                brands=brands_list, 
                                sgpids=sgpid_whitelist,
                                verbose=verbose)
