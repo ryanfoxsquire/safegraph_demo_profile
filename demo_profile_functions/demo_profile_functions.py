@@ -3,6 +3,11 @@ import numpy as np
 import pandas as pd
 import os
 
+def pd_read_csv_drive(id, drive, dtype=None):
+  downloaded = drive.CreateFile({'id':id}) 
+  downloaded.GetContentFile('Filename.csv')  
+  return(pd.read_csv('Filename.csv',dtype=dtype))
+
 
 # ~~~~~~~~~~~~~~ Wrangle Open Census Data Data Functions~~~~~~~~~~
 
@@ -10,6 +15,21 @@ import os
 # TODO move this into a separate file
 
 from functools import reduce
+
+
+
+# Note: OpenCensusData public GDrive folder: https://drive.google.com/drive/u/1/folders/1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
+
+drive_ids = {'cbg_b19.csv' : '1d9GscpWbrnP2xNLKKlgd6xLcFTzJydY4',
+              'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
+              'cbg_b02.csv' : '1Zqqf3iLDkDWPl2theLlUm_cAbvznj-Kx',
+              'cbg_b15.csv' : '1xeSZShcX3egZFsalGOFD6Ze2jTof6ri-',
+              'cbg_field_descriptions.csv' : '1a7_7WxY6eaUIObkVwfknl9C7nPltYxPd',
+              'cbg_fips_codes.csv' : '1dB_HeAw11TmsZ8MATMedC9j2csTRAiVm',
+             'home_panel_summary.csv': '1aiwhO6Pw1ZfUOoqUf6mS70s9tJgsAVp5'
+}
+
+
 
 def flatten_list(mylist):
     newlist = []
@@ -19,8 +39,12 @@ def flatten_list(mylist):
         newlist = newlist + item
     return(newlist)  
 
-def get_cbg_field_desc(ocd_dir):
-    return(pd.read_csv(os.path.join(ocd_dir,"metadata","cbg_field_descriptions.csv")))
+def get_cbg_field_desc(ocd_dir=None, drive=None):
+    if(ocd_dir):
+        df = pd.read_csv(os.path.join(ocd_dir,"metadata","cbg_field_descriptions.csv"))
+    elif(drive):
+        df = pd_read_csv_drive(drive_ids['cbg_field_descriptions.csv'])
+    return(df)
 
 def get_age_by_sex_groups():
     age_groups = {'Ages 15-29': ['B01001e30', 'B01001e31', 'B01001e32', 'B01001e33', 'B01001e34', 'B01001e35','B01001e6', 'B01001e7', 'B01001e8', 'B01001e9', 'B01001e10', 'B01001e11'],
@@ -167,9 +191,12 @@ def reaggregate_census_data(cen_df, cbg_field_desc, demos_to_analyze, verbose=Fa
     
     return(cen_df, cbg_field_desc)
 
-def get_raw_census_data(demos_to_analyze, open_census_data_dir, verbose=False):
+def get_raw_census_data(demos_to_analyze, open_census_data_dir, drive=None, verbose=False):
     # demos_to_analyze is a list of length 1 to 5 containing field_level_1 values  
     # open_census_data_dir is the path where the Open Census Data is located
+    # alternatively if you pass a drive object from google coLab e.g. drive = GoogleDrive(gauth), 
+    #.  then these functions will read from the public Google Drive sharing open census data. 
+    # Note: OpenCensusData public GDrive folder: https://drive.google.com/drive/u/1/folders/1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
     
     # These are the supported options for field_level_1 strings: 
     #    'Sex By Age', 
@@ -178,14 +205,19 @@ def get_raw_census_data(demos_to_analyze, open_census_data_dir, verbose=False):
     #    'Educational Attainment For The Population 25 Years And Over',
     #    'Aggregate Household Income In The Past 12 Months (In 2016 Inflation-Adjusted Dollars)'
     
-    if(verbose): print("Pulling census data for:\n{0}".format('\n'.join(demos_to_analyze)))
-
-    cbg_field_desc = get_cbg_field_desc(open_census_data_dir)
+    cbg_field_desc = get_cbg_field_desc(ocd_dir=open_census_data_dir, drive=drive)
     prefixes = get_census_prefix(demos_to_analyze, cbg_field_desc) + ['b01'] # 'b01' we need for total_population
-    ocd_files = [os.path.join(open_census_data_dir, 'data',filepath) for filepath in os.listdir(open_census_data_dir + 'data/') if filepath[4:7] in prefixes]
-    census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
+
+    if(verbose): print("Pulling census data from {0} for:\n{1}".format((open_census_data_dir or drive), '\n'.join(demos_to_analyze)))
+    if(open_census_data_dir):
+        ocd_files = [os.path.join(open_census_data_dir, 'data',filepath) for filepath in os.listdir(open_census_data_dir + 'data/') if filepath[4:7] in prefixes]
+        census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
+    elif(drive):
+        prefixes = get_census_prefix(demos_to_analyze, cbg_field_desc) + ['b01'] # 'b01' we need for total_population
+        ocd_files = ['cbg_'+prefix+'.csv' for prefix in prefixes]
+        census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
+        census_df_raw = [pd_read_csv_drive(drive_ids[file],dtype = {'census_block_group': str}) for file in ocd_files]
     cen_df = reduce(lambda  left,right: pd.merge(left,right,on='census_block_group'), census_df_raw)
-    
     return(cen_df, cbg_field_desc) 
 
 def normalize_demos_to_fractions(cen_df, demos_to_analyze, verbose=False):
