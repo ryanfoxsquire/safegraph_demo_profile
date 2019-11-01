@@ -577,6 +577,7 @@ def combine_and_analyze(visitors_df,
                         sample_col = 'visitor_count',
                         conf_interval=0.95,
                         verbose=False):
+
     # join datasets together
     visitors_join = join_visitors_census_and_panel(visitors_df, home_panel, census_df, verbose=verbose)
     # log post-hoc stratification re-weighting at CBG level to use later
@@ -601,7 +602,7 @@ def master_demo_analysis(open_census_data_dir,
                          verbose=False):
     
     visitors_df = get_patterns_master(patterns_dir=patterns_dir, 
-                               drive=None,
+                               drive=drive,
                                brands=brands_list, 
                                sgpids=sgpid_whitelist,
                                verbose=verbose)
