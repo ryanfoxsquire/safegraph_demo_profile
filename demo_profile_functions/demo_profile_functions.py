@@ -3,17 +3,16 @@ import numpy as np
 import pandas as pd
 import os
 
+
+# ~~~~~~~~~~~~~~ Loading Public GDrive into Colab Notebooks ~~~~~~~~~~
+
 def pd_read_csv_drive(id, drive, dtype=None):
   downloaded = drive.CreateFile({'id':id}) 
   downloaded.GetContentFile('Filename.csv')  
   return(pd.read_csv('Filename.csv',dtype=dtype))
 
-
-# ~~~~~~~~~~~~~~ Wrangle Open Census Data Data Functions~~~~~~~~~~
-
-from functools import reduce
-
-# Note: OpenCensusData public GDrive folder: https://drive.google.com/drive/u/1/folders/1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
+# Note: OpenCensusData public GDrive folder: https://drive.google.com/open?id=1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
+# Note: Sample of Patterns data public GDrive folder: https://drive.google.com/open?id=1xC8RFmrF3f6laRH08kOPBRLHEwJ8c41h
 drive_ids = {'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
              'cbg_b02.csv' : '1Zqqf3iLDkDWPl2theLlUm_cAbvznj-Kx',
              'cbg_b03.csv' : '1LVvZfx3hHiwN3YBh7pz43Y2KWV61OJFA',
@@ -25,6 +24,9 @@ drive_ids = {'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
              'core_poi-patterns.csv' : '1vOiASCoWVIppoYK8DiyLShhH7xbZhfxA'
 }
 
+# ~~~~~~~~~~~~~~ Wrangle Open Census Data Data Functions~~~~~~~~~~
+
+from functools import reduce
 
 
 def flatten_list(mylist):
