@@ -550,7 +550,7 @@ def apply_strata_reweighting(df,
 
 # ~~~~~~~~~~~~~~ Wrapper Functions~~~~~~~~~~
 
-def get_patterns_master(patterns_dir, drive=None, brands=None, sgpids=None):
+def get_patterns_master(patterns_dir, drive=None, brands=None, sgpids=None, verbose=False):
     if((not brands) & (not sgpids)):
         print("Error: Must give either a brand_list or sgpid_whitelist in get_patterns()")
         return(None)
@@ -604,7 +604,8 @@ def master_demo_analysis(open_census_data_dir,
     visitors_df = get_patterns_master(patterns_dir=patterns_dir, 
                                drive=drive,
                                brands=brands_list, 
-                               sgpids=sgpid_whitelist)
+                               sgpids=sgpid_whitelist,
+                               verbose=verbose)
 
     print("complete visitors_df {}".format(visitors_df.shape))
     
