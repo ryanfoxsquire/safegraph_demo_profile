@@ -11,18 +11,24 @@ def pd_read_csv_drive(id, drive, dtype=None):
   downloaded.GetContentFile('Filename.csv')  
   return(pd.read_csv('Filename.csv',dtype=dtype))
 
-# Note: OpenCensusData public GDrive folder: https://drive.google.com/open?id=1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
-# Note: Sample of Patterns data public GDrive folder: https://drive.google.com/open?id=1xC8RFmrF3f6laRH08kOPBRLHEwJ8c41h
-drive_ids = {'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
-             'cbg_b02.csv' : '1Zqqf3iLDkDWPl2theLlUm_cAbvznj-Kx',
-             'cbg_b03.csv' : '1LVvZfx3hHiwN3YBh7pz43Y2KWV61OJFA',
-             'cbg_b15.csv' : '1xeSZShcX3egZFsalGOFD6Ze2jTof6ri-',
-             'cbg_b19.csv' : '1d9GscpWbrnP2xNLKKlgd6xLcFTzJydY4',
-             'cbg_field_descriptions.csv' : '1a7_7WxY6eaUIObkVwfknl9C7nPltYxPd',
-             'cbg_fips_codes.csv' : '1dB_HeAw11TmsZ8MATMedC9j2csTRAiVm',
-             'home_panel_summary.csv': '1aiwhO6Pw1ZfUOoqUf6mS70s9tJgsAVp5',
-             'core_poi-patterns.csv' : '1vOiASCoWVIppoYK8DiyLShhH7xbZhfxA'
-}
+def get_drive_id(filename):
+
+    # Note: OpenCensusData public GDrive folder: https://drive.google.com/open?id=1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
+    # Note: Sample of Patterns data public GDrive folder: https://drive.google.com/open?id=1xC8RFmrF3f6laRH08kOPBRLHEwJ8c41h
+    drive_ids = {'cbg_b01.csv' : '1QqttoDRoKpZM2TyyRwJ8B9c5bYZrHysB',
+                'cbg_b02.csv' : '1Zqqf3iLDkDWPl2theLlUm_cAbvznj-Kx',
+                'cbg_b03.csv' : '1LVvZfx3hHiwN3YBh7pz43Y2KWV61OJFA',
+                'cbg_b15.csv' : '1xeSZShcX3egZFsalGOFD6Ze2jTof6ri-',
+                'cbg_b19.csv' : '1d9GscpWbrnP2xNLKKlgd6xLcFTzJydY4',
+                'cbg_field_descriptions.csv' : '1a7_7WxY6eaUIObkVwfknl9C7nPltYxPd',
+                'cbg_fips_codes.csv' : '1dB_HeAw11TmsZ8MATMedC9j2csTRAiVm',
+                'home_panel_summary.csv': '1aiwhO6Pw1ZfUOoqUf6mS70s9tJgsAVp5',
+                'core_poi-patterns.csv' : '1vOiASCoWVIppoYK8DiyLShhH7xbZhfxA'
+    }
+    if(filename):
+        return(drive_ids[filename])
+    else:
+        return(drive_ids)
 
 # ~~~~~~~~~~~~~~ Wrangle Open Census Data Data Functions~~~~~~~~~~
 
@@ -41,7 +47,7 @@ def get_cbg_field_desc(ocd_dir=None, drive=None):
     if(ocd_dir):
         df = pd.read_csv(os.path.join(ocd_dir,"metadata","cbg_field_descriptions.csv"))
     elif(drive):
-        df = pd_read_csv_drive(drive_ids['cbg_field_descriptions.csv'], drive)
+        df = pd_read_csv_drive(get_drive_id('cbg_field_descriptions.csv'), drive)
     return(df)
 
 def get_age_by_sex_groups():
@@ -212,7 +218,7 @@ def get_raw_census_data(demos_to_analyze, open_census_data_dir, drive=None, verb
         census_df_raw = [pd.read_csv(file,dtype = {'census_block_group': str}) for file in ocd_files]
     elif(drive):
         ocd_files = ['cbg_'+prefix+'.csv' for prefix in prefixes]
-        census_df_raw = [pd_read_csv_drive(drive_ids[file], drive, dtype = {'census_block_group': str}) for file in ocd_files]
+        census_df_raw = [pd_read_csv_drive(get_drive_id(file), drive, dtype = {'census_block_group': str}) for file in ocd_files]
     cen_df = reduce(lambda  left,right: pd.merge(left,right,on='census_block_group'), census_df_raw)
     return(cen_df, cbg_field_desc) 
 
@@ -232,7 +238,7 @@ def get_home_panel(patterns_dir=None,  drive=None):
     if(patterns_dir):
         home_panel = pd.read_csv(os.path.join(patterns_dir, "home_panel_summary.csv"), dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
     elif(drive):
-        home_panel = pd_read_csv_drive(drive_ids['home_panel_summary.csv'], drive, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
+        home_panel = pd_read_csv_drive(get_drive_id('home_panel_summary.csv'), drive, dtype = {'census_block_group': str}).drop(['year', 'month','state'],axis='columns')
     home_panel = home_panel.groupby(['census_block_group']).sum().reset_index() # CLEAN -- there are some CBGs with records split across states, erroneously. 
     return(home_panel)
 
@@ -242,7 +248,7 @@ def read_patterns_data(patterns_path, drive=None):
         patterns_raw = pd.concat((pd.read_csv(f) for f in all_patterns_files))
     elif(drive):
         all_patterns_files = [key for key in drive_ids.keys() if 'patterns' in key]
-        patterns_raw = pd.concat((pd_read_csv_drive(drive_ids[f], drive) for f in all_patterns_files))
+        patterns_raw = pd.concat((pd_read_csv_drive(get_drive_id(f), drive) for f in all_patterns_files))
     return(patterns_raw)
 
 def filter_patterns_dat(patt_df, brands_whitelist, sgpid_whitelist, verbose=False):
@@ -609,18 +615,17 @@ def master_demo_analysis(open_census_data_dir,
                                brands=brands_list, 
                                sgpids=sgpid_whitelist,
                                verbose=verbose)
-
-    print("complete visitors_df {}".format(visitors_df.shape))
+    if(verbose): print("completed visitors_df {}".format(visitors_df.shape))
     
     home_panel = get_home_panel(patterns_dir=patterns_dir, drive=drive)
-    print("complete homePanel {}".format(home_panel.shape))
+    if(verbose): print("completed homePanel {}".format(home_panel.shape))
 
 
     census_df, cbg_field_desc_mod = get_census_master(demos_to_analyze,
                                                       open_census_dir=open_census_data_dir,
                                                       drive=drive,
                                                       verbose=verbose)
-    print("complete census {}".format(census_df.shape))
+    if(verbose): print("completed census {}".format(census_df.shape))
 
     visitors_join, final_results = combine_and_analyze(visitors_df, 
                                                        home_panel, 
