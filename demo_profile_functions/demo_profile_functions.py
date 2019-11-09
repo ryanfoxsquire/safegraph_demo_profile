@@ -247,7 +247,7 @@ def read_patterns_data(patterns_path, drive=None):
         all_patterns_files = [os.path.join(patterns_path,filepath) for filepath in os.listdir(patterns_path) if 'patterns' in filepath.lower()]
         patterns_raw = pd.concat((pd.read_csv(f) for f in all_patterns_files))
     elif(drive):
-        all_patterns_files = [key for key in drive_ids.keys() if 'patterns' in key]
+        all_patterns_files = [key for key in get_drive_id(None).keys() if 'patterns' in key]
         patterns_raw = pd.concat((pd_read_csv_drive(get_drive_id(f), drive) for f in all_patterns_files))
     return(patterns_raw)
 
