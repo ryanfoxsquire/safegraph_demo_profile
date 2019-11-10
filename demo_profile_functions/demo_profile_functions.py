@@ -63,7 +63,7 @@ def get_age_by_sex_groups():
     
     return(age_groups, age_groups_new_codes)
  
-def get_household_income_groups(return_col_order=False):
+def get_household_income_groups():
     inc_groups =  {'Less than $59,999' : ['B19001e2','B19001e3', 'B19001e4', 'B19001e5', 'B19001e6', 'B19001e7', 'B19001e8', 'B19001e9','B19001e10', 'B19001e11',],
                   '$60,000 To $99,999' : ['B19001e12','B19001e13'],
                   '$100,000 Or More' : ['B19001e14','B19001e15','B19001e16','B19001e17']
@@ -77,7 +77,7 @@ def get_household_income_groups(return_col_order=False):
     
     return(inc_groups, inc_groups_new_codes)
 
-def get_edu_attainment_groups(return_col_order=False):
+def get_edu_attainment_groups():
     
     edu_groups =  {"Less than High School Diploma" : ['B15003e10','B15003e11','B15003e12','B15003e13','B15003e14','B15003e15','B15003e16','B15003e5','B15003e6','B15003e7','B15003e8','B15003e9','B15003e2','B15003e3','B15003e4'],
                    "HS Diploma or GED" : ['B15003e17','B15003e18'],
