@@ -532,11 +532,6 @@ def apply_normal_lower_ci(x, mean_col, std_col, ci=0.95):
 def apply_normal_upper_ci(x, mean_col, std_col, ci=0.95):
     return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=x[std_col])[1])
 
-def pois_normal_approx_mean_of_sample_std(x, lambda_col, num_samples_col):
-    # http://onbiostatistics.blogspot.com/2014/03/computing-confidence-interval-for.html
-    # but note that lambda_col needs to be num_observations / total_exposure
-    return(np.sqrt(x[lambda_col]/x[num_samples_col]))
-
 def get_conf_interval_of_mean_estimate(df, sample_col='visitor_count_D_adj', conf_interval=0.95):
     df['poisson_as_normal_aprx_std'] = np.sqrt(df[sample_col].tolist())
     df['conf_interval'] = df[sample_col] - df.apply(apply_normal_lower_ci, axis=1, mean_col=sample_col, std_col='poisson_as_normal_aprx_std', ci=conf_interval)
