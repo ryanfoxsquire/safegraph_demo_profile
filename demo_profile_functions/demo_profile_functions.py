@@ -353,7 +353,7 @@ def wrangle_summs_into_long_format(summs_, demos_list, verbose=False):
         transposed = transposed[~transposed.measure.isna() & transposed.demo_code.isin(all_demo_codes)]
         pvt = transposed.pivot(index='demo_code',columns='measure',values='value').reset_index()
         # Caution, something weird happens with the dtypes during this pivot, so be careful. see: https://stackoverflow.com/questions/46859400/pandas-pivot-changes-dtype
-        del pvt.columns.name
+        pvt.columns.name = None
         pvt['brands'] = brands
         data_summary_list.append(pvt)
 
