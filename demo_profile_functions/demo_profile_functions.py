@@ -449,14 +449,14 @@ def make_demographics_chart(res2plot,
     
     # prep to plot 
     plt.rcParams['figure.figsize'] = fig_size
-    res2plot = pd.merge(res2plot, dpf.get_col_orders(), how = 'left').sort_values(by=[group_key,'field_level_1','col_order'], ascending=True)
+    res2plot = pd.merge(res2plot, get_col_orders(), how = 'left').sort_values(by=[group_key,'field_level_1','col_order'], ascending=True)
     brands2plot = pd.Series(res2plot[group_key].unique()).sort_values()
     if(show_error):
         err_linewidth, capsize = (2,5)
     else:
         err_linewidth, capsize = (0,0)
         errors = None   
-    color_map = dpf.build_label_color_map(brands2plot, colorset='Set1', rand_draw=False)
+    color_map = build_label_color_map(brands2plot, colorset='Set1', rand_draw=False)
     
     # plot the data according to chart_type
     if(chart_type=='bar'):
@@ -484,7 +484,7 @@ def make_demographics_chart(res2plot,
         barWidth = 0.6
         last_bars = np.array([0]*len(brands2plot))
         demos2plot = res2plot[res2plot[group_key]==brands2plot[0]][bar_groups]
-        color_map = dpf.build_label_color_map(demos2plot, rand_draw=False)
+        color_map = build_label_color_map(demos2plot, rand_draw=False)
         fig, ax = plt.subplots(1, 1)
         ax.yaxis.grid(zorder=0)
         for idx, this_demo in demos2plot.iteritems():
@@ -502,12 +502,12 @@ def make_demographics_chart(res2plot,
     # label/style the chart and legend
     if(chart_type in ['bar', 'line']):
         xlabel='Demo Group'
-        group_labels = dpf.format_group_labels(res2plot[res2plot[group_key] == brands2plot[0]][group_label])
+        group_labels = format_group_labels(res2plot[res2plot[group_key] == brands2plot[0]][group_label])
         plt.xticks([r + barWidth for r in range(len(bars_data))], group_labels, rotation=90, size=16)
         plt.legend(fontsize=18)
     elif(chart_type=='stacked_bar'):
         xlabel = 'Brand'
-        group_labels = dpf.format_group_labels(brands2plot,space_split=1) 
+        group_labels = format_group_labels(brands2plot,space_split=1) 
         plt.xticks([r for r in range(len(brands2plot))], group_labels, rotation=90, size=16)
         # Create legend & Show graphic
         handles, labels = plt.gca().get_legend_handles_labels()
