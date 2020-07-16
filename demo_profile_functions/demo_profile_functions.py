@@ -306,8 +306,8 @@ def extract_visitor_home_cbgs(patt_df, columns_from_patterns=['safegraph_place_i
 
 
 # ~~~~~~~~~~~~~~ Data Wrangling Functions~~~~~~~~~~
-def join_visitors_census_and_panel(visitors_df_, home_panel_, cen_df_, verbose=False):
-    visitors_j1 = pd.merge(visitors_df_, home_panel_, left_on='visitor_home_cbg', right_on='census_block_group').drop('visitor_home_cbg',axis='columns')
+def join_visitors_census_and_panel(visitors_df_, home_panel_, cen_df_, verbose=False, left_on='visitor_home_cbg', right_on='census_block_group'):
+    visitors_j1 = pd.merge(visitors_df_, home_panel_, left_on=left_on, right_on=right_on).drop('visitor_home_cbg',axis='columns')
     visitors_j2 = pd.merge(visitors_j1,cen_df_)
     if(verbose): print("Shape of fully-joined dataframe: \n{0}".format(visitors_j2.shape))
     return(visitors_j2)
@@ -324,15 +324,15 @@ def allocate_visits_by_demos(df_, demos_list, sample_col='visitor_count', verbos
         if(verbose): print("Allocated counts for {0}. df shape: {1}".format(demo_group,df.shape))
     return(df)
 
-def sum_across_cbgs(df, verbose=False):
-    cols_to_keep = ['brands','visitor_count', 'number_devices_residing', 'B01001e1'] + [col for col in df.columns if  '_adj' == col[-4::]]
+def sum_across_cbgs(df, group_key='brands', verbose=False):
+    cols_to_keep = [group_key,'visitor_count', 'number_devices_residing', 'B01001e1'] + [col for col in df.columns if  '_adj' == col[-4::]]
     df = df[cols_to_keep].copy() # drop original columns
     df['cbg_count'] = [1]*df.shape[0] # we use this to keep track of how many CBG were measured for each brand
-    summs = df.groupby(['brands']).sum().reset_index()
+    summs = df.groupby([group_key]).sum().reset_index()
     if(verbose): print("summed data. df shape: {0}".format(summs.shape))
     return(summs)
 
-def wrangle_summs_into_long_format(summs_, demos_list, verbose=False):
+def wrangle_summs_into_long_format(summs_, demos_list, group_key='brands', verbose=False):
     # This is a data-wrangling function to re-format the data. 
     # summs_ has one row for each brand and many columns (one for each demo ) aka wide format.
     # To make analysis and vis easier, we want one row for each brand-demo-group pair, and one column for the visitor counts measurement. 
@@ -343,9 +343,9 @@ def wrangle_summs_into_long_format(summs_, demos_list, verbose=False):
     all_demo_codes = flatten_list([get_final_table_ids(demo) for demo in demos_list])
 
     data_summary_list = []
-    for brands in summs_.brands.tolist():
-        row = summs_[summs_.brands == brands].squeeze()
-        row.drop('brands', inplace=True)
+    for this_group in summs_[group_key].tolist():
+        row = summs_[summs_[group_key] == this_group].squeeze()
+        row.drop(group_key, inplace=True)
         transposed = row.T.reset_index()
         transposed.columns = ['attribute','value']
         transposed['demo_code'] = transposed.attribute.str.split('_').str[2]
@@ -354,25 +354,25 @@ def wrangle_summs_into_long_format(summs_, demos_list, verbose=False):
         pvt = transposed.pivot(index='demo_code',columns='measure',values='value').reset_index()
         # Caution, something weird happens with the dtypes during this pivot, so be careful. see: https://stackoverflow.com/questions/46859400/pandas-pivot-changes-dtype
         pvt.columns.name = None
-        pvt['brands'] = brands
+        pvt[group_key] = this_group
         data_summary_list.append(pvt)
 
     demo_summary = pd.concat(data_summary_list)
-    demo_summary = pd.merge(demo_summary, summs_[['brands','cbg_count']])
+    demo_summary = pd.merge(demo_summary, summs_[[group_key,'cbg_count']])
     if(verbose): print("wrangled data: df shape: {0}".format(demo_summary.shape))
     return(demo_summary)
 
-def allocate_sum_wrangle_demos(df_, demos_list, verbose=False):
+def allocate_sum_wrangle_demos(df_, demos_list, group_key='brands', verbose=False):
     demos_df = allocate_visits_by_demos(df_, demos_list, verbose=verbose)
-    summs_df = sum_across_cbgs(demos_df, verbose=verbose)
-    demo_summary_df = wrangle_summs_into_long_format(summs_df, demos_list, verbose=verbose)
+    summs_df = sum_across_cbgs(demos_df, group_key=group_key, verbose=verbose)
+    demo_summary_df = wrangle_summs_into_long_format(summs_df, demos_list, group_key=group_key, verbose=verbose)
     return(demo_summary_df)
 
-def get_totals_for_each_brand_and_demo(df, cbg_field_desc_, sample_col='visitor_count'):
+def get_totals_for_each_brand_and_demo(df, cbg_field_desc_, sample_col='visitor_count', group_key='brands'):
     meas_vars = [col for col in df.columns if sample_col in col]
     df = pd.merge(df, cbg_field_desc_[['table_id','field_level_1']], left_on='demo_code' , right_on='table_id').drop('table_id',axis=1).rename(columns={'field_level_1':'demo_category'})
-    total_visitors_est = df.groupby(['demo_category', 'brands']).sum(numeric_only=None).reset_index()[['demo_category', 'brands'] + meas_vars]
-    df = pd.merge(df, total_visitors_est, on = ['demo_category','brands'], suffixes=('','_total'))
+    total_visitors_est = df.groupby(['demo_category', group_key]).sum(numeric_only=None).reset_index()[['demo_category', group_key] + meas_vars]
+    df = pd.merge(df, total_visitors_est, on = ['demo_category',group_key], suffixes=('','_total'))
     return(df)
 
 def convert_cols_to_frac_of_total(df, columns_to_adjust, column_with_total, col_suffix='_rate'):
@@ -435,6 +435,7 @@ def get_col_orders():
     
 def make_demographics_chart(res2plot, 
                     chart_type='bar', 
+                    group_key='brands',
                     column_to_plot='visitor_count_D_adj_rw_rate', 
                     error_column='conf_interval_rw_rate', 
                     bar_groups='field_level_2', 
@@ -447,30 +448,30 @@ def make_demographics_chart(res2plot,
     
     # prep to plot 
     plt.rcParams['figure.figsize'] = fig_size
-    res2plot = pd.merge(res2plot, get_col_orders(), how = 'left').sort_values(by=['brands','field_level_1','col_order'], ascending=True)
-    brands2plot = pd.Series(res2plot.brands.unique()).sort_values()
+    res2plot = pd.merge(res2plot, dpf.get_col_orders(), how = 'left').sort_values(by=[group_key,'field_level_1','col_order'], ascending=True)
+    brands2plot = pd.Series(res2plot[group_key].unique()).sort_values()
     if(show_error):
         err_linewidth, capsize = (2,5)
     else:
         err_linewidth, capsize = (0,0)
         errors = None   
-    color_map = build_label_color_map(brands2plot, colorset='Set1', rand_draw=False)
+    color_map = dpf.build_label_color_map(brands2plot, colorset='Set1', rand_draw=False)
     
     # plot the data according to chart_type
     if(chart_type=='bar'):
         barWidth = 0.7 / len(brands2plot)
         for idx, this_brand in brands2plot.iteritems():
-            bars_data=res2plot[res2plot.brands==this_brand][column_to_plot]*100
+            bars_data=res2plot[res2plot[group_key]==this_brand][column_to_plot]*100
             x_pos = [x + (idx+1)*barWidth for x in np.arange(len(bars_data))]
-            if(show_error): errors=res2plot[res2plot.brands==this_brand][error_column]*100
+            if(show_error): errors=res2plot[res2plot[group_key]==this_brand][error_column]*100
             eb1 = plt.bar(x_pos, bars_data, yerr=errors, color=color_map[color_map.label==this_brand].color.iloc[0], width=barWidth, edgecolor='k', label=this_brand, capsize=capsize)
     
     elif(chart_type=='line'):
         barWidth=0
         for idx, this_brand in brands2plot.iteritems():
-            bars_data=res2plot[res2plot.brands==this_brand][column_to_plot]*100
+            bars_data=res2plot[res2plot[group_key]==this_brand][column_to_plot]*100
             x_pos = np.arange(len(bars_data))
-            if(show_error): errors=res2plot[res2plot.brands==this_brand][error_column]*100
+            if(show_error): errors=res2plot[res2plot[group_key]==this_brand][error_column]*100
             plot_obj = plt.errorbar(x_pos, bars_data, yerr=errors, color=color_map[color_map.label==this_brand].color.iloc[0], label=this_brand, linewidth=5, marker = 'o', markeredgecolor='k', markersize=12, alpha=0.8, capsize=capsize)
             
             if(show_error): # Style error bars
@@ -481,8 +482,8 @@ def make_demographics_chart(res2plot,
     elif(chart_type=='stacked_bar'):
         barWidth = 0.6
         last_bars = np.array([0]*len(brands2plot))
-        demos2plot = res2plot[res2plot.brands==brands2plot[0]][bar_groups]
-        color_map = build_label_color_map(demos2plot, rand_draw=False)
+        demos2plot = res2plot[res2plot[group_key]==brands2plot[0]][bar_groups]
+        color_map = dpf.build_label_color_map(demos2plot, rand_draw=False)
         fig, ax = plt.subplots(1, 1)
         ax.yaxis.grid(zorder=0)
         for idx, this_demo in demos2plot.iteritems():
@@ -500,12 +501,12 @@ def make_demographics_chart(res2plot,
     # label/style the chart and legend
     if(chart_type in ['bar', 'line']):
         xlabel='Demo Group'
-        group_labels = format_group_labels(res2plot[res2plot.brands == brands2plot[0]][group_label])
+        group_labels = dpf.format_group_labels(res2plot[res2plot[group_key] == brands2plot[0]][group_label])
         plt.xticks([r + barWidth for r in range(len(bars_data))], group_labels, rotation=90, size=16)
         plt.legend(fontsize=18)
     elif(chart_type=='stacked_bar'):
         xlabel = 'Brand'
-        group_labels = format_group_labels(brands2plot,space_split=1) 
+        group_labels = dpf.format_group_labels(brands2plot,space_split=1) 
         plt.xticks([r for r in range(len(brands2plot))], group_labels, rotation=90, size=16)
         # Create legend & Show graphic
         handles, labels = plt.gca().get_legend_handles_labels()
@@ -527,10 +528,10 @@ import scipy
 from scipy import stats
 
 def apply_normal_lower_ci(x, mean_col, std_col, ci=0.95):
-    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=np.max([x[std_col], 10**-10]))[0])
+    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=x[std_col])[0])
 
 def apply_normal_upper_ci(x, mean_col, std_col, ci=0.95):
-    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=np.max([x[std_col], 10**-10]))[1])
+    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=x[std_col])[1])
 
 def get_conf_interval_of_mean_estimate(df, sample_col='visitor_count_D_adj', conf_interval=0.95):
     df['poisson_as_normal_aprx_std'] = np.sqrt(df[sample_col].tolist())
