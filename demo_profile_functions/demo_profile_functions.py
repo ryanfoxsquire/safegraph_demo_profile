@@ -538,7 +538,7 @@ def get_conf_interval_of_mean_estimate(df, sample_col='visitor_count_D_adj', con
     return(df)
 
 def compute_adjust_factor(df, population_col, sample_col):
-    adjust_factor = df[population_col] / df[population_col].sum() * df[sample_col].sum() / df[sample_col]
+    adjust_factor = df[population_col] / df[population_col].sum() * df[sample_col].sum() / df[sample_col].clip(lower=0.00001)
     return(adjust_factor)
 
 def apply_strata_reweighting(df,
@@ -546,7 +546,8 @@ def apply_strata_reweighting(df,
                              raw_column='visitor_count_D_adj',
                              adjusted_column='visitor_count_POP_D_adj'):
     
-        df['demo_adjust_factor'] = df[adjusted_column] / df[raw_column]
+        
+        df['demo_adjust_factor'] = df[adjusted_column] / df[raw_column].clip(lower=0.00001)
         for col in cols_to_adjust:
             df[col+'_rw'] = df[col] * df['demo_adjust_factor']
         return(df)
