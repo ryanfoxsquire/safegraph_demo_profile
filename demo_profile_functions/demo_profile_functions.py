@@ -12,7 +12,6 @@ def pd_read_csv_drive(id, drive, dtype=None):
   return(pd.read_csv('Filename.csv',dtype=dtype))
 
 def get_drive_id(filename):
-    print('testtest')
 
     # Note: OpenCensusData public GDrive folder: https://drive.google.com/open?id=1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
     # Note: Sample of Patterns data public GDrive folder: https://drive.google.com/open?id=1xC8RFmrF3f6laRH08kOPBRLHEwJ8c41h
