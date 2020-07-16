@@ -527,10 +527,10 @@ import scipy
 from scipy import stats
 
 def apply_normal_lower_ci(x, mean_col, std_col, ci=0.95):
-    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=x[std_col])[0])
+    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=np.max([x[std_col], 10**-10]))[0])
 
 def apply_normal_upper_ci(x, mean_col, std_col, ci=0.95):
-    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=x[std_col])[1])
+    return(scipy.stats.norm.interval(ci, loc=x[mean_col], scale=np.max([x[std_col], 10**-10]))[1])
 
 def get_conf_interval_of_mean_estimate(df, sample_col='visitor_count_D_adj', conf_interval=0.95):
     df['poisson_as_normal_aprx_std'] = np.sqrt(df[sample_col].tolist())
