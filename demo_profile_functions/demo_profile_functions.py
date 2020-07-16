@@ -12,6 +12,7 @@ def pd_read_csv_drive(id, drive, dtype=None):
   return(pd.read_csv('Filename.csv',dtype=dtype))
 
 def get_drive_id(filename):
+    print('testtest')
 
     # Note: OpenCensusData public GDrive folder: https://drive.google.com/open?id=1btSS6zo7_wJCCXAigkbhnaoeU-Voa9pG
     # Note: Sample of Patterns data public GDrive folder: https://drive.google.com/open?id=1xC8RFmrF3f6laRH08kOPBRLHEwJ8c41h
@@ -581,6 +582,7 @@ def combine_and_analyze(visitors_df,
                         pop_col = 'B01001e1',
                         sample_size_col = 'number_devices_residing',
                         sample_col = 'visitor_count',
+                        group_key = 'brands',
                         conf_interval=0.95,
                         verbose=False):
 
@@ -590,10 +592,10 @@ def combine_and_analyze(visitors_df,
     visitors_join['cbg_adjust_factor'] = compute_adjust_factor(visitors_join, pop_col, sample_size_col)
     visitors_join[sample_col+'_cbg_adj'] = visitors_join[sample_col] * visitors_join['cbg_adjust_factor']
     # analyze
-    demo_summary = allocate_sum_wrangle_demos(visitors_join, demos_list, verbose=verbose)
+    demo_summary = allocate_sum_wrangle_demos(visitors_join, demos_list, group_key=group_key, verbose=verbose)
     demo_stats = get_conf_interval_of_mean_estimate(demo_summary, sample_col=sample_col+'_D_adj', conf_interval=conf_interval)
     demos_reweighted = apply_strata_reweighting(demo_stats, cols_to_adjust=[sample_col+'_D_adj', 'conf_interval'], raw_column=sample_col+'_D_adj', adjusted_column=sample_col+'_POP_D_adj') # at demo level
-    final_results = get_totals_for_each_brand_and_demo(demos_reweighted, cbg_field_desc_mod, sample_col=sample_col+'_D_adj_rw')
+    final_results = get_totals_for_each_brand_and_demo(demos_reweighted, cbg_field_desc_mod, sample_col=sample_col+'_D_adj_rw', group_key=group_key)
     final_results = convert_cols_to_frac_of_total(final_results, [sample_col+'_D_adj_rw', 'conf_interval_rw'], sample_col+'_D_adj_rw_total')
     final_results = pd.merge(final_results, cbg_field_desc_mod, left_on = 'demo_code', right_on='table_id').dropna(axis=1,how='all')
     
@@ -605,6 +607,7 @@ def master_demo_analysis(open_census_data_dir,
                          demos_to_analyze, 
                          brands_list, 
                          sgpid_whitelist, 
+                         group_key = 'brands',
                          verbose=False):
     
     visitors_df = get_patterns_master(patterns_dir=patterns_dir, 
@@ -629,6 +632,7 @@ def master_demo_analysis(open_census_data_dir,
                                                        census_df,
                                                        cbg_field_desc_mod,
                                                        demos_to_analyze,
+                                                       group_key = group_key,
                                                        verbose=verbose)
     return(visitors_join, final_results)
     
