@@ -307,7 +307,7 @@ def extract_visitor_home_cbgs(patt_df, columns_from_patterns=['safegraph_place_i
 
 # ~~~~~~~~~~~~~~ Data Wrangling Functions~~~~~~~~~~
 def join_visitors_census_and_panel(visitors_df_, home_panel_, cen_df_, verbose=False, left_on='visitor_home_cbg', right_on='census_block_group'):
-    visitors_j1 = pd.merge(visitors_df_, home_panel_, left_on=left_on, right_on=right_on).drop('visitor_home_cbg',axis='columns')
+    visitors_j1 = pd.merge(visitors_df_, home_panel_, left_on=left_on, right_on=right_on, suffixes=("", "_right")).drop('visitor_home_cbg',axis='columns')
     visitors_j2 = pd.merge(visitors_j1,cen_df_, on='census_block_group')
     if(verbose): print("Shape of fully-joined dataframe: \n{0}".format(visitors_j2.shape))
     return(visitors_j2)
