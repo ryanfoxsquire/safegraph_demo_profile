@@ -514,7 +514,7 @@ def make_demographics_chart(res2plot,
         plt.legend([handles[idx] for idx in order],[labels[idx] for idx in order],fontsize=18, bbox_to_anchor=(1,0.5))
        
     plt.xlabel(xlabel, fontweight='bold')
-    plt.ylabel("% of Visitors To Brand", size=20)
+    plt.ylabel("% of Total Visitors", size=20)
     plt.ylim((0,100))   
     plt.show()
     return(None)
