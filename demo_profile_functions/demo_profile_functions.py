@@ -505,7 +505,7 @@ def make_demographics_chart(res2plot,
         plt.xticks([r + barWidth for r in range(len(bars_data))], group_labels, rotation=90, size=16)
         plt.legend(fontsize=18)
     elif(chart_type=='stacked_bar'):
-        xlabel = 'Brand'
+        xlabel = ''
         group_labels = format_group_labels(brands2plot,space_split=1) 
         plt.xticks([r for r in range(len(brands2plot))], group_labels, rotation=90, size=16)
         # Create legend & Show graphic
